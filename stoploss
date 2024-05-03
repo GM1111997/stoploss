@@ -1,0 +1,97 @@
+// RSI 30-50-70-lvl strategy
+[IntrabarOrderGeneration = true];
+begin 
+	vars:
+		intrabarpersist MyRSI(0),
+		intrabarpersist high_level(70), low_level(30),
+		intrabarpersist overbought(false), oversold(false),
+		myStop(5), // percentage of stoploss
+		stop_threshold(0), s1S(0);
+		
+	MyRSI = RSI(open,14);
+	
+	// evaluate stop loss levels
+	if MarketPosition_at_Broker_for_The_Strategy <> 0 then
+		stop_threshold = entryprice*(myStop/100);
+
+	// CHECK reset conditions
+	if MyRSI > 70 and MyRSI[1] <= 70 and MarketPosition_at_Broker <= 0 then 
+		overbought = true;
+	if MyRSI < 70 and MyRSI[1] >= 70 and MarketPosition_at_Broker >= 0 then 
+		overbought = false;
+
+
+	if MyRSI < 30 and MyRSI[1] >= 30 and MarketPosition_at_Broker >= 0 then 
+		oversold = true;
+  	if MyRSI > 30 and MyRSI[1] <= 30 and MarketPosition_at_Broker <= 0 then 
+		oversold = false;
+
+	// UPDATE levels
+ 	if overbought then
+ 		if MyRSI > high_level+5 then
+ 			high_level = MyRSI - 3;
+ 	 			
+ 	if oversold then
+ 		if MyRSI < low_level-5 then
+ 			low_level = MyRSI + 3;
+ 	
+ 	// RESET levels		
+       if not(overbought) then
+ 		high_level = 70;
+
+ 	if not(oversold) then
+ 		low_level = 30;
+
+			
+	// BUY & SELL signals
+	if MyRSI < 50 and MyRSI[1] >= 50 and MarketPosition_at_Broker >= 0 then 
+	begin
+		Sellshort("Short50") next bar at market;
+		buytocover("stopLoss_from_ShortPos50") next bar entryprice+stop_threshold stop;
+	end;
+	
+	if MyRSI > 50 and MyRSI[1] <= 50 and MarketPosition_at_Broker <= 0 then 
+	begin
+		Buy("Long50") next bar at market;
+		sell("stopLoss_from_LongPos50") next bar entryprice-stop_threshold stop;
+	end;
+
+	if MyRSI > high_level and MyRSI[1] <= high_level and MarketPosition_at_Broker <= 0 then 
+	begin
+		Buy("Long70") next bar at market;
+		sell("stopLoss_from_LongPosHigh") next bar entryprice-stop_threshold stop;
+       end;
+       
+       if MyRSI < high_level and MyRSI[1] >= high_level and MarketPosition_at_Broker >= 0 then 
+       begin
+		Sellshort("Short70") next bar at market;
+		buytocover("stopLoss_from_ShortPosHigh") next bar entryprice+stop_threshold stop;
+	end;
+		
+	if MyRSI < low_level and MyRSI[1] >= low_level and MarketPosition_at_Broker >= 0 then 
+	begin
+		Sellshort("Short30") next bar at market;
+		buytocover("stopLoss_from_ShortPosLow") next bar entryprice+stop_threshold stop;
+	end;
+	
+	if MyRSI > low_level and MyRSI[1] <= low_level and MarketPosition_at_Broker <= 0 then 
+	begin
+		Buy("Long30") next bar at market;
+		sell("stopLoss_from_LongPosLow") next bar entryprice-stop_threshold stop;
+	end;
+	
+	// CHECK reset conditions
+	if MyRSI > 70 and MyRSI[1] <= 70 and MarketPosition_at_Broker <= 0 then 
+		overbought = true;
+	if MyRSI < 70 and MyRSI[1] >= 70 and MarketPosition_at_Broker >= 0 then 
+		overbought = false;
+
+
+	if MyRSI < 30 and MyRSI[1] >= 30 and MarketPosition_at_Broker >= 0 then 
+		oversold = true;
+  	if MyRSI > 30 and MyRSI[1] <= 30 and MarketPosition_at_Broker <= 0 then 
+		oversold = false;
+				
+		
+end; 
+
